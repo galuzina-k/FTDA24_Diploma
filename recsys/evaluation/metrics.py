@@ -15,13 +15,17 @@ def reciprocal_rank(ranked: list[str], targets: list[str]) -> float:
 
 def ndcg_at_k(ranked: list[str], targets: list[str], k: int) -> float:
     target_set = set(targets)
-    dcg = sum(1.0 / math.log2(i + 2) for i, rid in enumerate(ranked[:k]) if rid in target_set)
+    dcg = sum(
+        1.0 / math.log2(i + 2) for i, rid in enumerate(ranked[:k]) if rid in target_set
+    )
     n_relevant = min(len(targets), k)
     idcg = sum(1.0 / math.log2(i + 2) for i in range(n_relevant))
     return dcg / idcg if idcg > 0 else 0.0
 
 
-def compute_metrics(predictions: list[list[str]], targets: list[list[str]], k: int = 10) -> dict:
+def compute_metrics(
+    predictions: list[list[str]], targets: list[list[str]], k: int = 10
+) -> dict:
     assert len(predictions) == len(targets)
     hits, rrs, ndcgs = [], [], []
     for pred, tgt in zip(predictions, targets):

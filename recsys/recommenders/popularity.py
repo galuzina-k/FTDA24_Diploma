@@ -24,4 +24,6 @@ class PopularityRecommender(BaseRecommender):
     ) -> RecommendationResult:
         seen = set(history_imdb_ids)
         picks = [mid for mid in self.ranked if mid not in seen][:top_k]
-        return RecommendationResult(movie_ids=picks, explanation="Globally most popular movies.")
+        return RecommendationResult(
+            movie_ids=picks, explanation="Globally most popular movies."
+        )

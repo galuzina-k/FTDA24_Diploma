@@ -24,5 +24,4 @@ class BaseRecommender(ABC):
         query: str,
         history_imdb_ids: list[str],
         top_k: int = 10,
-    ) -> RecommendationResult:
-        ...
+    ) -> RecommendationResult: ...

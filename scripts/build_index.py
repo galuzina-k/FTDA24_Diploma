@@ -28,6 +28,7 @@ def main():
 
     if args.model:
         import recsys.config as cfg
+
         cfg.EMBEDDING_MODEL = args.model
 
     build_index()

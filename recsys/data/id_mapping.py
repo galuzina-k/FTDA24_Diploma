@@ -21,10 +21,14 @@ Which candidate best matches the reference? Reply with just the exact title from
 
 
 def _format_candidates(candidates: list[dict]) -> str:
-    return "\n".join(f"- {c['title']} ({c['year']}) [id: {c['local_movie_id']}]" for c in candidates)
+    return "\n".join(
+        f"- {c['title']} ({c['year']}) [id: {c['local_movie_id']}]" for c in candidates
+    )
 
 
-def resolve_mention(mention: str, index: TitleIndex, llm: LLMClient | None) -> str | None:
+def resolve_mention(
+    mention: str, index: TitleIndex, llm: LLMClient | None
+) -> str | None:
     result = index.search(mention, top_k=5)
 
     if result["exact_canonical_match"]:
@@ -38,8 +42,12 @@ def resolve_mention(mention: str, index: TitleIndex, llm: LLMClient | None) -> s
     if llm is None:
         return candidates[0]["imdb_id"] or candidates[0]["local_movie_id"]
 
-    prompt = LLM_PROMPT.format(mention=mention, candidates=_format_candidates(candidates))
-    response = llm.complete([{"role": "user", "content": prompt}], temperature=0.0, max_tokens=64).strip()
+    prompt = LLM_PROMPT.format(
+        mention=mention, candidates=_format_candidates(candidates)
+    )
+    response = llm.complete(
+        [{"role": "user", "content": prompt}], temperature=0.0, max_tokens=64
+    ).strip()
 
     if response.lower() == "none":
         return None
@@ -91,7 +99,9 @@ def build_id_map(
     write_lock = threading.Lock()
 
     with ThreadPoolExecutor(max_workers=LLM_WORKERS) as executor:
-        futures = {executor.submit(resolve_mention, m, index, llm): m for m in remaining}
+        futures = {
+            executor.submit(resolve_mention, m, index, llm): m for m in remaining
+        }
         for future in tqdm(as_completed(futures), total=len(futures), desc="Matching"):
             mention = futures[future]
             try:
@@ -110,4 +120,6 @@ def build_id_map(
     output_path.write_text(json.dumps(output, ensure_ascii=False, indent=2))
 
     matched = sum(1 for v in mention_to_id.values() if v)
-    print(f"Matched {matched}/{len(mention_to_id)} ({100 * matched // len(mention_to_id)}%) → {output_path}")
+    print(
+        f"Matched {matched}/{len(mention_to_id)} ({100 * matched // len(mention_to_id)}%) → {output_path}"
+    )

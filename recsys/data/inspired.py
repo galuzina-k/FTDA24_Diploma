@@ -30,9 +30,11 @@ def _parse_full_text(full_text: str) -> list[Turn]:
     turns = []
     for line in full_text.splitlines():
         if line.startswith("SEEKER:"):
-            turns.append(Turn(role="seeker", text=line[len("SEEKER:"):].strip()))
+            turns.append(Turn(role="seeker", text=line[len("SEEKER:") :].strip()))
         elif line.startswith("RECOMMENDER:"):
-            turns.append(Turn(role="recommender", text=line[len("RECOMMENDER:"):].strip()))
+            turns.append(
+                Turn(role="recommender", text=line[len("RECOMMENDER:") :].strip())
+            )
     return turns
 
 
@@ -62,17 +64,19 @@ def load_dialogs(
                     mention_map[title] = mid
                     history_imdb_ids.append(mid)
 
-            dialogs.append(Dialog(
-                dialog_id=dialog_id,
-                turns=_parse_full_text(row.get("full_text", "")),
-                user_query=row.get("user_query", ""),
-                recommended_title=target_title,
-                target_imdb_id=target_imdb_id,
-                history_imdb_ids=history_imdb_ids,
-                movie_sentiments=row.get("movies", {}),
-                genre_sentiments=row.get("genres", {}),
-                mention_map=mention_map,
-            ))
+            dialogs.append(
+                Dialog(
+                    dialog_id=dialog_id,
+                    turns=_parse_full_text(row.get("full_text", "")),
+                    user_query=row.get("user_query", ""),
+                    recommended_title=target_title,
+                    target_imdb_id=target_imdb_id,
+                    history_imdb_ids=history_imdb_ids,
+                    movie_sentiments=row.get("movies", {}),
+                    genre_sentiments=row.get("genres", {}),
+                    mention_map=mention_map,
+                )
+            )
 
     return dialogs
 
@@ -81,7 +85,11 @@ def dialog_context_before_recommendation(dialog: Dialog) -> list[Turn]:
     target_lower = dialog.recommended_title.lower()
     cutoff = len(dialog.turns)
     for i, turn in enumerate(dialog.turns):
-        if turn.role == "recommender" and target_lower and target_lower in turn.text.lower():
+        if (
+            turn.role == "recommender"
+            and target_lower
+            and target_lower in turn.text.lower()
+        ):
             cutoff = i
             break
     return dialog.turns[:cutoff]

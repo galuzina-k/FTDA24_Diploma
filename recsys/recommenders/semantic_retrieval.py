@@ -21,7 +21,9 @@ class SemanticRetrievalRecommender(BaseRecommender):
         history_imdb_ids: list[str],
         top_k: int = 10,
     ) -> RecommendationResult:
-        seeker_turns = [t.text for t in dialog_history[-6:] if t.role == "seeker" and t.text.strip()]
+        seeker_turns = [
+            t.text for t in dialog_history[-6:] if t.role == "seeker" and t.text.strip()
+        ]
         context = " ".join(seeker_turns[-2:])
         enriched = f"{context} {query}".strip() if context else query
 

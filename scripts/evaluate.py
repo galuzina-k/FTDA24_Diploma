@@ -16,11 +16,21 @@ from recsys.recommenders import REGISTRY, build
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--recommender", default="all", help=f"Recommender name or 'all'. Available: {list(REGISTRY)}")
+    parser.add_argument(
+        "--recommender",
+        default="all",
+        help=f"Recommender name or 'all'. Available: {list(REGISTRY)}",
+    )
     parser.add_argument("--k", type=int, default=TOP_K)
-    parser.add_argument("--max-dialogs", type=int, default=None, help="Limit test dialogs (debug).")
-    parser.add_argument("--workers", type=int, default=1, help="Parallel workers (LLM-using recs only).")
-    parser.add_argument("--no-resume", action="store_true", help="Ignore existing logs.")
+    parser.add_argument(
+        "--max-dialogs", type=int, default=None, help="Limit test dialogs (debug)."
+    )
+    parser.add_argument(
+        "--workers", type=int, default=1, help="Parallel workers (LLM-using recs only)."
+    )
+    parser.add_argument(
+        "--no-resume", action="store_true", help="Ignore existing logs."
+    )
     parser.add_argument("--no-save", action="store_true")
     args = parser.parse_args()
 
@@ -33,22 +43,30 @@ def main():
     dialogs = load_dialogs()
     train, test = train_test_split(dialogs)
     if args.max_dialogs:
-        test = test[:args.max_dialogs]
+        test = test[: args.max_dialogs]
     print(f"Train: {len(train)}  Test: {len(test)}")
 
     results = []
     for name in names:
         print(f"\n→ {name}")
         rec = build(name)
-        workers = args.workers if rec.name.startswith(("llm_query_only", "hybrid")) else 1
-        metrics = evaluate_recommender(
-            rec, train, test,
-            top_k=args.k, workers=workers, resume=not args.no_resume,
+        workers = (
+            args.workers if rec.name.startswith(("llm_query_only", "hybrid")) else 1
         )
-        print(f"  HitRate@{args.k}: {metrics[f'HitRate@{args.k}']:.2f}%  "
-              f"MRR: {metrics['MRR']:.2f}%  "
-              f"NDCG@{args.k}: {metrics[f'NDCG@{args.k}']:.2f}%  "
-              f"(n={metrics['n']})")
+        metrics = evaluate_recommender(
+            rec,
+            train,
+            test,
+            top_k=args.k,
+            workers=workers,
+            resume=not args.no_resume,
+        )
+        print(
+            f"  HitRate@{args.k}: {metrics[f'HitRate@{args.k}']:.2f}%  "
+            f"MRR: {metrics['MRR']:.2f}%  "
+            f"NDCG@{args.k}: {metrics[f'NDCG@{args.k}']:.2f}%  "
+            f"(n={metrics['n']})"
+        )
         results.append(metrics)
 
     if len(results) > 1:

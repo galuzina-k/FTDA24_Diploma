@@ -102,20 +102,30 @@ class HybridRecommender(BaseRecommender):
         faiss_candidates = self._retrieve_faiss(search_text, history_imdb_ids)
 
         # Stage 2b: LLM open-world recall (LLM call 2)
-        llm_candidates, ow_raw = self._recall_open_world(query, seeker_block, history_imdb_ids)
+        llm_candidates, ow_raw = self._recall_open_world(
+            query, seeker_block, history_imdb_ids
+        )
 
         # Stage 3: merge pools, dedup by imdb_id
-        candidates = self._merge_candidates(faiss_candidates, llm_candidates, history_imdb_ids)
+        candidates = self._merge_candidates(
+            faiss_candidates, llm_candidates, history_imdb_ids
+        )
 
         if not candidates:
             return RecommendationResult(
                 movie_ids=[],
                 explanation="No candidates after merging retrieval and recall.",
-                extra={"preferences": prefs, "preferences_raw": prefs_raw, "ow_raw": ow_raw},
+                extra={
+                    "preferences": prefs,
+                    "preferences_raw": prefs_raw,
+                    "ow_raw": ow_raw,
+                },
             )
 
         # Stage 4: LLM rerank the merged pool (LLM call 3)
-        ranking, rerank_raw = self._rerank(prefs, candidates, top_k, seeker_block, query)
+        ranking, rerank_raw = self._rerank(
+            prefs, candidates, top_k, seeker_block, query
+        )
         picks = self._materialize_picks(ranking, candidates, top_k)
 
         n_faiss = sum(1 for c in candidates if c["source"] == "faiss")
@@ -130,7 +140,10 @@ class HybridRecommender(BaseRecommender):
                 "preferences": prefs,
                 "preferences_raw": prefs_raw,
                 "ow_raw": ow_raw,
-                "candidates": [{"id": c.get("imdb_id") or c["id"], "source": c["source"]} for c in candidates],
+                "candidates": [
+                    {"id": c.get("imdb_id") or c["id"], "source": c["source"]}
+                    for c in candidates
+                ],
                 "rerank_raw": rerank_raw,
                 "ranking": ranking,
             },
@@ -171,7 +184,9 @@ class HybridRecommender(BaseRecommender):
             val = parsed.get(key)
             parsed[key] = [str(x) for x in val if x] if isinstance(val, list) else []
         sq = parsed.get("search_query")
-        parsed["search_query"] = sq.strip() if isinstance(sq, str) and sq.strip() else query
+        parsed["search_query"] = (
+            sq.strip() if isinstance(sq, str) and sq.strip() else query
+        )
         return parsed, raw
 
     # ------------------------------------------------------------------ #
@@ -245,15 +260,17 @@ class HybridRecommender(BaseRecommender):
                 continue
             movie = get_movie_by_id(mid) or {}
             seen_ids.add(mid)
-            candidates.append({
-                "id": mid,
-                "imdb_id": mid,
-                "title": movie.get("title", title),
-                "year": movie.get("year", item.get("year", "")),
-                "genres": movie.get("genres", []),
-                "overview": movie.get("overview", ""),
-                "source": "llm",
-            })
+            candidates.append(
+                {
+                    "id": mid,
+                    "imdb_id": mid,
+                    "title": movie.get("title", title),
+                    "year": movie.get("year", item.get("year", "")),
+                    "genres": movie.get("genres", []),
+                    "overview": movie.get("overview", ""),
+                    "source": "llm",
+                }
+            )
             if len(candidates) >= self._llm_recall:
                 break
         return candidates, raw
@@ -292,8 +309,12 @@ class HybridRecommender(BaseRecommender):
     # ------------------------------------------------------------------ #
 
     def _rerank(
-        self, prefs: dict, candidates: list[dict], top_k: int,
-        seeker_block: str = "", query: str = "",
+        self,
+        prefs: dict,
+        candidates: list[dict],
+        top_k: int,
+        seeker_block: str = "",
+        query: str = "",
     ) -> tuple[list[int], str]:
         lines = []
         for i, c in enumerate(candidates):
@@ -383,7 +404,9 @@ class HybridRecommender(BaseRecommender):
     # ------------------------------------------------------------------ #
 
     def _format_seeker_block(self, dialog_history: list[Turn]) -> str:
-        turns = [t.text for t in dialog_history[-8:] if t.role == "seeker" and t.text.strip()]
+        turns = [
+            t.text for t in dialog_history[-8:] if t.role == "seeker" and t.text.strip()
+        ]
         return " ".join(turns[-3:])
 
     def _format_history_block(self, history_imdb_ids: list[str]) -> str:

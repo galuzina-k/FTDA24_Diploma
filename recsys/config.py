@@ -32,7 +32,7 @@ RECOMMENDER_LOGS_DIR = RESULTS_DIR / "logs"
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-MODEL_NAME = "openai/gpt-5.3-chat"#"minimax/minimax-m2.5"#
+MODEL_NAME = "openai/gpt-5.3-chat"  # "minimax/minimax-m2.5"#
 
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
 

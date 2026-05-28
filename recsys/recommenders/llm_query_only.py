@@ -17,7 +17,9 @@ No explanation, just the JSON array."""
 class LLMQueryOnlyRecommender(BaseRecommender):
     name = "llm_query_only"
 
-    def __init__(self, llm: LLMClient | None = None, title_index: TitleIndex | None = None):
+    def __init__(
+        self, llm: LLMClient | None = None, title_index: TitleIndex | None = None
+    ):
         self._llm = llm or LLMClient()
         self._index = title_index or TitleIndex()
         slug = self._llm.model.replace("/", "_").replace("-", "_").replace(".", "_")
@@ -31,11 +33,17 @@ class LLMQueryOnlyRecommender(BaseRecommender):
         top_k: int = 10,
     ) -> RecommendationResult:
         if not query:
-            return RecommendationResult(movie_ids=[], explanation="No user_query available.")
+            return RecommendationResult(
+                movie_ids=[], explanation="No user_query available."
+            )
 
         raw = self._llm.complete(
-            [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": query}],
-            temperature=0.0, max_tokens=2048,
+            [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": query},
+            ],
+            temperature=0.0,
+            max_tokens=2048,
         )
         resolved = self._resolve_titles(raw)
 
@@ -49,7 +57,11 @@ class LLMQueryOnlyRecommender(BaseRecommender):
 
     @staticmethod
     def _proxy_query_from_turns(dialog_history: list[Turn]) -> str:
-        seeker_texts = [t.text.strip() for t in dialog_history if t.role == "seeker" and t.text.strip()]
+        seeker_texts = [
+            t.text.strip()
+            for t in dialog_history
+            if t.role == "seeker" and t.text.strip()
+        ]
         if not seeker_texts:
             return ""
         joined = "\n".join(f"- {t}" for t in seeker_texts)
@@ -101,7 +113,9 @@ class LLMQueryOnlyDynamicRecommender(LLMQueryOnlyRecommender):
 
     name = "llm_query_only_dynamic"
 
-    def __init__(self, llm: LLMClient | None = None, title_index: TitleIndex | None = None):
+    def __init__(
+        self, llm: LLMClient | None = None, title_index: TitleIndex | None = None
+    ):
         super().__init__(llm=llm, title_index=title_index)
         slug = self._llm.model.replace("/", "_").replace("-", "_").replace(".", "_")
         self.name = f"llm_query_only_dynamic__{slug}"
@@ -115,11 +129,17 @@ class LLMQueryOnlyDynamicRecommender(LLMQueryOnlyRecommender):
     ) -> RecommendationResult:
         effective_query = query or self._proxy_query_from_turns(dialog_history)
         if not effective_query:
-            return RecommendationResult(movie_ids=[], explanation="No context available.")
+            return RecommendationResult(
+                movie_ids=[], explanation="No context available."
+            )
 
         raw = self._llm.complete(
-            [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": effective_query}],
-            temperature=0.0, max_tokens=2048,
+            [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": effective_query},
+            ],
+            temperature=0.0,
+            max_tokens=2048,
         )
         resolved = self._resolve_titles(raw)
 

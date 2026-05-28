@@ -12,7 +12,13 @@ class SVDRecommender(BaseRecommender):
 
     def fit(self, train_dialogs: list[Dialog]) -> None:
         users = [d.dialog_id for d in train_dialogs]
-        items = sorted({mid for d in train_dialogs for mid in d.history_imdb_ids + [d.target_imdb_id]})
+        items = sorted(
+            {
+                mid
+                for d in train_dialogs
+                for mid in d.history_imdb_ids + [d.target_imdb_id]
+            }
+        )
 
         self.user_idx = {u: i for i, u in enumerate(users)}
         self.item_idx = {it: i for i, it in enumerate(items)}
@@ -37,11 +43,23 @@ class SVDRecommender(BaseRecommender):
         top_k: int = 10,
     ) -> RecommendationResult:
         seen = set(history_imdb_ids)
-        vecs = [self.item_factors[self.item_idx[mid]] for mid in history_imdb_ids if mid in self.item_idx]
+        vecs = [
+            self.item_factors[self.item_idx[mid]]
+            for mid in history_imdb_ids
+            if mid in self.item_idx
+        ]
         if not vecs:
-            return RecommendationResult(movie_ids=[], explanation="No history items in training vocabulary.")
+            return RecommendationResult(
+                movie_ids=[], explanation="No history items in training vocabulary."
+            )
 
         user_vec = np.mean(vecs, axis=0)
-        scores = {mid: float(user_vec @ self.item_factors[i]) for mid, i in self.item_idx.items() if mid not in seen}
+        scores = {
+            mid: float(user_vec @ self.item_factors[i])
+            for mid, i in self.item_idx.items()
+            if mid not in seen
+        }
         picks = sorted(scores, key=scores.get, reverse=True)[:top_k]
-        return RecommendationResult(movie_ids=picks, explanation="SVD factorization of dialog-item matrix.")
+        return RecommendationResult(
+            movie_ids=picks, explanation="SVD factorization of dialog-item matrix."
+        )

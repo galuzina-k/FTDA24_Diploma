@@ -2,7 +2,11 @@ import json
 
 from recsys.data.inspired import Turn
 from recsys.recommenders.base import RecommendationResult
-from recsys.recommenders.hybrid import HybridRecommender, RERANK_PROMPT, _parse_json_loose
+from recsys.recommenders.hybrid import (
+    HybridRecommender,
+    RERANK_PROMPT,
+    _parse_json_loose,
+)
 
 
 STATE_UPDATE_PROMPT = """\
@@ -97,9 +101,13 @@ class HybridStateRecommender(HybridRecommender):
         search_text = self._build_search_text(query, seeker_block, prefs)
         faiss_candidates = self._retrieve_faiss(search_text, list(filter_ids))
 
-        llm_candidates, ow_raw = self._recall_open_world(query, seeker_block, list(filter_ids))
+        llm_candidates, ow_raw = self._recall_open_world(
+            query, seeker_block, list(filter_ids)
+        )
 
-        candidates = self._merge_candidates(faiss_candidates, llm_candidates, list(filter_ids))
+        candidates = self._merge_candidates(
+            faiss_candidates, llm_candidates, list(filter_ids)
+        )
 
         if not candidates:
             return RecommendationResult(
@@ -115,10 +123,17 @@ class HybridStateRecommender(HybridRecommender):
                 },
             )
 
-        seen_titles_resolved = self._titles_for_ids(seen_ids, state.get("seen_titles", []))
+        seen_titles_resolved = self._titles_for_ids(
+            seen_ids, state.get("seen_titles", [])
+        )
         ranking, rerank_raw = self._rerank_with_constraints(
-            prefs, candidates, top_k, seeker_block, query,
-            state.get("constraints", []), seen_titles_resolved,
+            prefs,
+            candidates,
+            top_k,
+            seeker_block,
+            query,
+            state.get("constraints", []),
+            seen_titles_resolved,
         )
         picks = self._materialize_picks(ranking, candidates, top_k)
 
@@ -139,7 +154,10 @@ class HybridStateRecommender(HybridRecommender):
                 "preferences": prefs,
                 "preferences_raw": prefs_raw,
                 "ow_raw": ow_raw,
-                "candidates": [{"id": c.get("imdb_id") or c["id"], "source": c["source"]} for c in candidates],
+                "candidates": [
+                    {"id": c.get("imdb_id") or c["id"], "source": c["source"]}
+                    for c in candidates
+                ],
                 "rerank_raw": rerank_raw,
                 "ranking": ranking,
             },
@@ -165,7 +183,9 @@ class HybridStateRecommender(HybridRecommender):
             last_rec_text = ""
         return state
 
-    def _update_state(self, state: dict, recommender_text: str, seeker_text: str) -> dict:
+    def _update_state(
+        self, state: dict, recommender_text: str, seeker_text: str
+    ) -> dict:
         user_msg = (
             f"Current state:\n{json.dumps(state, ensure_ascii=False)}\n\n"
             f"Recommender turn:\n{recommender_text or '(none)'}\n\n"
@@ -188,9 +208,15 @@ class HybridStateRecommender(HybridRecommender):
             return state
 
         return {
-            "seen_titles": _merge_str_list(state.get("seen_titles", []), parsed.get("seen_titles")),
-            "rejected_titles": _merge_str_list(state.get("rejected_titles", []), parsed.get("rejected_titles")),
-            "constraints": _merge_str_list(state.get("constraints", []), parsed.get("constraints")),
+            "seen_titles": _merge_str_list(
+                state.get("seen_titles", []), parsed.get("seen_titles")
+            ),
+            "rejected_titles": _merge_str_list(
+                state.get("rejected_titles", []), parsed.get("rejected_titles")
+            ),
+            "constraints": _merge_str_list(
+                state.get("constraints", []), parsed.get("constraints")
+            ),
         }
 
     def _resolve_titles_to_ids(self, titles: list[str]) -> set[str]:
@@ -209,6 +235,7 @@ class HybridStateRecommender(HybridRecommender):
         falls back to the raw extracted titles otherwise.
         """
         from recsys.data.catalog import get_movie_by_id
+
         out: list[str] = []
         seen_lower: set[str] = set()
         for mid in ids:
@@ -264,7 +291,9 @@ class HybridStateRecommender(HybridRecommender):
             context_parts.append(f"Annotated user query:\n{query}")
         context_parts.append(f"Extracted preferences:\n{prefs_summary}")
         if constraints:
-            context_parts.append(f"Situational constraints:\n- " + "\n- ".join(constraints))
+            context_parts.append(
+                f"Situational constraints:\n- " + "\n- ".join(constraints)
+            )
         if seen_titles:
             context_parts.append(
                 "Movies the seeker has already watched (deprioritize unless clearly the best fit):\n- "

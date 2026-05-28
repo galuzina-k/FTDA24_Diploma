@@ -31,7 +31,9 @@ def _load_done(log_path: Path) -> dict[str, list[str]]:
 
 def _predict_one(recommender: BaseRecommender, dialog: Dialog, top_k: int) -> dict:
     ctx = dialog_context_before_recommendation(dialog)
-    result = recommender.recommend(ctx, dialog.user_query, dialog.history_imdb_ids, top_k=top_k)
+    result = recommender.recommend(
+        ctx, dialog.user_query, dialog.history_imdb_ids, top_k=top_k
+    )
     return {
         "dialog_id": dialog.dialog_id,
         "target": dialog.target_imdb_id,
@@ -74,8 +76,15 @@ def evaluate_recommender(
                 write(entry)
         else:
             with ThreadPoolExecutor(max_workers=workers) as executor:
-                futures = {executor.submit(_predict_one, recommender, d, top_k): d for d in remaining}
-                for future in tqdm(as_completed(futures), total=len(futures), desc=f"  {recommender.name}"):
+                futures = {
+                    executor.submit(_predict_one, recommender, d, top_k): d
+                    for d in remaining
+                }
+                for future in tqdm(
+                    as_completed(futures),
+                    total=len(futures),
+                    desc=f"  {recommender.name}",
+                ):
                     d = futures[future]
                     try:
                         entry = future.result()

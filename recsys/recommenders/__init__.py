@@ -3,7 +3,10 @@ from recsys.recommenders.history_only import HistoryOnlyRecommender
 from recsys.recommenders.hybrid import HybridRecommender
 from recsys.recommenders.hybrid_state import HybridStateRecommender
 from recsys.recommenders.hybrid_unbiased import HybridUnbiasedRecommender
-from recsys.recommenders.llm_query_only import LLMQueryOnlyDynamicRecommender, LLMQueryOnlyRecommender
+from recsys.recommenders.llm_query_only import (
+    LLMQueryOnlyDynamicRecommender,
+    LLMQueryOnlyRecommender,
+)
 from recsys.recommenders.popularity import PopularityRecommender
 from recsys.recommenders.semantic_retrieval import SemanticRetrievalRecommender
 from recsys.recommenders.svd import SVDRecommender

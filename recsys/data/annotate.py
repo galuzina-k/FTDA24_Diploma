@@ -63,8 +63,12 @@ def annotate_dialog(llm: LLMClient, dialog_id: str, rows: list[dict]) -> dict:
     full_text = _build_full_text(rows)
     coarse, fine = _get_labels(rows)
     extracted = llm.complete_json(
-        [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": full_text}],
-        temperature=0.0, max_tokens=1024,
+        [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": full_text},
+        ],
+        temperature=0.0,
+        max_tokens=1024,
     )
     return {
         "dialog_id": dialog_id,
@@ -92,8 +96,13 @@ def annotate_all(output_path: Path = INSPIRED_ANNOTATED_PATH) -> None:
 
     with open(output_path, "a", encoding="utf-8") as out:
         with ThreadPoolExecutor(max_workers=WORKERS) as executor:
-            futures = {executor.submit(annotate_dialog, llm, did, rows): did for did, rows in remaining}
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Annotating"):
+            futures = {
+                executor.submit(annotate_dialog, llm, did, rows): did
+                for did, rows in remaining
+            }
+            for future in tqdm(
+                as_completed(futures), total=len(futures), desc="Annotating"
+            ):
                 did = futures[future]
                 try:
                     result = future.result()

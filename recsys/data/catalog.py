@@ -17,7 +17,9 @@ def _normalize(raw: dict, idx: int) -> dict:
     year = (raw.get("year") or raw.get("release_year") or "").strip()
     genres_raw = raw.get("genre") or raw.get("genres") or ""
     genres = [g.strip() for g in genres_raw.replace("|", ",").split(",") if g.strip()]
-    overview = (raw.get("short_plot") or raw.get("long_plot") or raw.get("overview") or "").strip()
+    overview = (
+        raw.get("short_plot") or raw.get("long_plot") or raw.get("overview") or ""
+    ).strip()
     actors = (raw.get("actors") or raw.get("cast") or "").strip()
     director = (raw.get("director") or "").strip()
     movie_id = (raw.get("movie_id") or raw.get("imdb_id") or str(idx)).strip()

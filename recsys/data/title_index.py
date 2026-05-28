@@ -32,12 +32,14 @@ def _detect_delimiter(path: Path) -> str:
     return "\t" if sample.count("\t") >= sample.count(",") else ","
 
 
-def _char_ngrams(text: str, min_n: int = NGRAM_RANGE[0], max_n: int = NGRAM_RANGE[1]) -> list[str]:
+def _char_ngrams(
+    text: str, min_n: int = NGRAM_RANGE[0], max_n: int = NGRAM_RANGE[1]
+) -> list[str]:
     padded = f"  {text}  "
     grams = []
     for n in range(min_n, max_n + 1):
         for i in range(0, max(0, len(padded) - n + 1)):
-            grams.append(padded[i:i + n])
+            grams.append(padded[i : i + n])
     return grams
 
 
@@ -60,7 +62,11 @@ def _token_set_ratio(a: str, b: str) -> float:
 
 
 def _fuzzy_score(query: str, candidate: str) -> float:
-    return max(_seq_ratio(query, candidate), _token_sort_ratio(query, candidate), _token_set_ratio(query, candidate))
+    return max(
+        _seq_ratio(query, candidate),
+        _token_sort_ratio(query, candidate),
+        _token_set_ratio(query, candidate),
+    )
 
 
 def build_title_retrieval_index(
@@ -76,21 +82,29 @@ def build_title_retrieval_index(
     with movie_db_path.open("r", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter=delimiter)
         for idx, row in enumerate(tqdm(reader, desc="Building title index"), start=1):
-            title = (row.get("title") or row.get("movie_title") or f"movie_{idx}").strip()
+            title = (
+                row.get("title") or row.get("movie_title") or f"movie_{idx}"
+            ).strip()
             canonical = canonicalize_title(title)
             ngrams = _char_ngrams(canonical)
             df_counter.update(set(ngrams))
-            movies.append({
-                "local_movie_id": (row.get("movie_id") or row.get("id") or str(idx)).strip(),
-                "title": title,
-                "canonical_title": canonical,
-                "year": (row.get("year") or "").strip(),
-                "imdb_id": (row.get("imdb_id") or "").strip(),
-                "ngrams": dict(Counter(ngrams)),
-            })
+            movies.append(
+                {
+                    "local_movie_id": (
+                        row.get("movie_id") or row.get("id") or str(idx)
+                    ).strip(),
+                    "title": title,
+                    "canonical_title": canonical,
+                    "year": (row.get("year") or "").strip(),
+                    "imdb_id": (row.get("imdb_id") or "").strip(),
+                    "ngrams": dict(Counter(ngrams)),
+                }
+            )
 
     total = len(movies)
-    idf = {gram: math.log((1 + total) / (1 + df)) + 1.0 for gram, df in df_counter.items()}
+    idf = {
+        gram: math.log((1 + total) / (1 + df)) + 1.0 for gram, df in df_counter.items()
+    }
 
     with index_path.open("w", encoding="utf-8") as f:
         json.dump({"idf": idf, "movies": movies}, f, ensure_ascii=False)
@@ -119,23 +133,38 @@ class TitleIndex:
             tf = doc_counts.get(term, 0)
             if tf == 0:
                 continue
-            score += self.idf.get(term, 0.0) * tf * (k1 + 1) / (tf + k1 * (1 - b + b * doc_len / self.avg_len))
+            score += (
+                self.idf.get(term, 0.0)
+                * tf
+                * (k1 + 1)
+                / (tf + k1 * (1 - b + b * doc_len / self.avg_len))
+            )
         return score
 
     def search(self, mention: str, top_k: int = TOP_K) -> dict[str, Any]:
         canonical = canonicalize_title(mention)
         query_grams = _char_ngrams(canonical)
 
-        exact = [self._meta(m, 1.0) for m in self.movies if m["canonical_title"] == canonical]
+        exact = [
+            self._meta(m, 1.0) for m in self.movies if m["canonical_title"] == canonical
+        ]
 
         fuzzy = sorted(
-            (self._meta(m, round(_fuzzy_score(canonical, m["canonical_title"]), 4)) for m in self.movies),
-            key=lambda x: x["score"], reverse=True,
+            (
+                self._meta(m, round(_fuzzy_score(canonical, m["canonical_title"]), 4))
+                for m in self.movies
+            ),
+            key=lambda x: x["score"],
+            reverse=True,
         )[:top_k]
 
         bm25 = sorted(
-            (self._meta(m, round(self._bm25_score(query_grams, m), 4)) for m in self.movies),
-            key=lambda x: x["score"], reverse=True,
+            (
+                self._meta(m, round(self._bm25_score(query_grams, m), 4))
+                for m in self.movies
+            ),
+            key=lambda x: x["score"],
+            reverse=True,
         )[:top_k]
 
         return {

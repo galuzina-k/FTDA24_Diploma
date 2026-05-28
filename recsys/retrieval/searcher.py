@@ -27,7 +27,9 @@ class Searcher:
         self.ids = json.loads(FAISS_IDS_PATH.read_text())
         self.catalog_by_id = {m["id"]: m for m in load_catalog()}
         self.model = SentenceTransformer(EMBEDDING_MODEL)
-        self._query_prefix = BGE_QUERY_PREFIX if _needs_bge_prefix(EMBEDDING_MODEL) else ""
+        self._query_prefix = (
+            BGE_QUERY_PREFIX if _needs_bge_prefix(EMBEDDING_MODEL) else ""
+        )
 
     def search(self, query: str, top_k: int = TOP_K) -> list[dict]:
         text = self._query_prefix + query if self._query_prefix else query
@@ -40,6 +42,8 @@ class Searcher:
             if idx < 0:
                 continue
             movie_id = self.ids[idx]
-            movie = self.catalog_by_id.get(movie_id, {"id": movie_id, "title": "Unknown"})
+            movie = self.catalog_by_id.get(
+                movie_id, {"id": movie_id, "title": "Unknown"}
+            )
             results.append({**movie, "score": float(score)})
         return results

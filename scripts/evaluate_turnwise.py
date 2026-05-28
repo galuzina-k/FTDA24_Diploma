@@ -12,6 +12,7 @@ intermediate cutoff and only pass the real annotated query at "full".
 Logs are written per (recommender, cutoff) so the run is resume-safe and the
 data can be re-analyzed without re-running.
 """
+
 import argparse
 import copy
 import sys
@@ -83,10 +84,19 @@ def _truncate_to_seeker_turns(dialog: Dialog, n_seeker: int | None) -> Dialog | 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--recommenders", nargs="+", default=DEFAULT_RECOMMENDERS,
-                        help=f"Recommender names. Available: {list(REGISTRY)}")
-    parser.add_argument("--cutoffs", nargs="+", type=int, default=DEFAULT_CUTOFFS,
-                        help="Seeker-turn cutoffs")
+    parser.add_argument(
+        "--recommenders",
+        nargs="+",
+        default=DEFAULT_RECOMMENDERS,
+        help=f"Recommender names. Available: {list(REGISTRY)}",
+    )
+    parser.add_argument(
+        "--cutoffs",
+        nargs="+",
+        type=int,
+        default=DEFAULT_CUTOFFS,
+        help="Seeker-turn cutoffs",
+    )
     parser.add_argument("--k", type=int, default=TOP_K)
     parser.add_argument("--max-dialogs", type=int, default=None)
     parser.add_argument("--workers", type=int, default=1)
@@ -97,7 +107,7 @@ def main():
     dialogs = load_dialogs()
     train, test = train_test_split(dialogs)
     if args.max_dialogs:
-        test = test[:args.max_dialogs]
+        test = test[: args.max_dialogs]
     print(f"Train: {len(train)}  Test: {len(test)}")
 
     cutoffs: list[int | None] = list(args.cutoffs)
@@ -119,15 +129,25 @@ def main():
             original_name = rec.name
             rec.name = f"{original_name}__cutoff_{label}"
 
-            workers = args.workers if original_name.startswith(("llm_query_only", "hybrid")) else 1
-            metrics = evaluate_recommender(
-                rec, train, truncated_test,
-                top_k=args.k, workers=workers, resume=not args.no_resume,
+            workers = (
+                args.workers
+                if original_name.startswith(("llm_query_only", "hybrid"))
+                else 1
             )
-            print(f"  HR@{args.k}: {metrics[f'HitRate@{args.k}']:.2f}%  "
-                  f"MRR: {metrics['MRR']:.2f}%  "
-                  f"NDCG@{args.k}: {metrics[f'NDCG@{args.k}']:.2f}%  "
-                  f"(n={metrics['n']})")
+            metrics = evaluate_recommender(
+                rec,
+                train,
+                truncated_test,
+                top_k=args.k,
+                workers=workers,
+                resume=not args.no_resume,
+            )
+            print(
+                f"  HR@{args.k}: {metrics[f'HitRate@{args.k}']:.2f}%  "
+                f"MRR: {metrics['MRR']:.2f}%  "
+                f"NDCG@{args.k}: {metrics[f'NDCG@{args.k}']:.2f}%  "
+                f"(n={metrics['n']})"
+            )
             results[original_name][label] = metrics
 
     _print_table(results, args.k, cutoffs)
@@ -140,7 +160,11 @@ def _print_table(results: dict, k: int, cutoffs: list):
     print("=" * 78)
     for metric_key in (f"HitRate@{k}", "MRR", f"NDCG@{k}"):
         print(f"\n{metric_key}")
-        header = f"  {'recommender':<24}" + "".join(f"  {lab:>8}" for lab in labels) + f"  {'(n_full)':>10}"
+        header = (
+            f"  {'recommender':<24}"
+            + "".join(f"  {lab:>8}" for lab in labels)
+            + f"  {'(n_full)':>10}"
+        )
         print(header)
         print("  " + "-" * (len(header) - 2))
         for name, by_cutoff in results.items():
